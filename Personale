@@ -1,0 +1,2247 @@
+<!DOCTYPE html>
+
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BDE">
+<meta name="theme-color" content="#0a0a0a">
+<title>Bar Decision Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #e8f000;
+    --accent2: #ff4444;
+    --accent3: #00d4aa;
+    --text: #f0f0f0;
+    --text2: #888;
+    --text3: #555;
+    --red: #ff4444;
+    --yellow: #e8f000;
+    --green: #00d4aa;
+    --orange: #ff8c00;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+- { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+background: var(–bg);
+color: var(–text);
+font-family: var(–font-mono);
+height: 100%;
+overflow: hidden;
+-webkit-font-smoothing: antialiased;
+}
+
+#app {
+height: 100vh;
+height: 100dvh;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+}
+
+/* ── SCREENS ── */
+.screen {
+display: none;
+flex-direction: column;
+height: 100%;
+overflow-y: auto;
+-webkit-overflow-scrolling: touch;
+padding: calc(var(–safe-top) + 16px) 20px calc(var(–safe-bottom) + 80px);
+animation: fadeIn 0.25s ease;
+}
+.screen.active { display: flex; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── NAV ── */
+#nav {
+position: fixed;
+bottom: 0;
+left: 0; right: 0;
+background: rgba(10,10,10,0.95);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
+border-top: 1px solid var(–border);
+display: flex;
+padding: 8px 0 calc(var(–safe-bottom) + 8px);
+z-index: 100;
+}
+.nav-btn {
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 3px;
+padding: 6px 4px;
+background: none;
+border: none;
+color: var(–text3);
+font-family: var(–font-mono);
+font-size: 9px;
+letter-spacing: 0.05em;
+cursor: pointer;
+transition: color 0.2s;
+}
+.nav-btn.active { color: var(–accent); }
+.nav-btn svg { width: 20px; height: 20px; }
+
+/* ── TYPOGRAPHY ── */
+.page-title {
+font-family: var(–font-display);
+font-size: 28px;
+font-weight: 800;
+line-height: 1.1;
+margin-bottom: 4px;
+}
+.page-sub {
+color: var(–text2);
+font-size: 11px;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+margin-bottom: 28px;
+}
+.section-label {
+font-size: 10px;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+color: var(–text3);
+margin-bottom: 10px;
+margin-top: 24px;
+}
+
+/* ── CARDS ── */
+.card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 12px;
+padding: 16px;
+margin-bottom: 12px;
+}
+.card-title {
+font-family: var(–font-display);
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 0.05em;
+margin-bottom: 8px;
+text-transform: uppercase;
+}
+
+/* ── BUTTONS ── */
+.btn {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+width: 100%;
+padding: 14px 20px;
+border: none;
+border-radius: 10px;
+font-family: var(–font-display);
+font-size: 14px;
+font-weight: 700;
+letter-spacing: 0.05em;
+cursor: pointer;
+transition: all 0.15s;
+text-transform: uppercase;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(–accent); color: #000; }
+.btn-secondary { background: var(–surface2); color: var(–text); border: 1px solid var(–border); }
+.btn-danger { background: var(–accent2); color: #fff; }
+.btn-sm {
+padding: 9px 14px;
+font-size: 12px;
+border-radius: 8px;
+width: auto;
+}
+
+/* ── SCORES ── */
+.score-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+margin-bottom: 16px;
+}
+.score-item {
+background: var(–surface2);
+border-radius: 10px;
+padding: 12px;
+border: 1px solid var(–border);
+}
+.score-label { font-size: 10px; color: var(–text2); margin-bottom: 6px; letter-spacing: 0.05em; }
+.score-value {
+font-family: var(–font-display);
+font-size: 26px;
+font-weight: 800;
+line-height: 1;
+}
+.score-bar {
+height: 3px;
+background: var(–border);
+border-radius: 2px;
+margin-top: 8px;
+overflow: hidden;
+}
+.score-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+/* ── RISK BADGES ── */
+.badge {
+display: inline-flex;
+align-items: center;
+gap: 5px;
+padding: 4px 10px;
+border-radius: 20px;
+font-size: 11px;
+font-weight: 600;
+font-family: var(–font-display);
+letter-spacing: 0.05em;
+}
+.badge-red { background: rgba(255,68,68,0.15); color: var(–red); border: 1px solid rgba(255,68,68,0.3); }
+.badge-yellow { background: rgba(232,240,0,0.1); color: var(–yellow); border: 1px solid rgba(232,240,0,0.3); }
+.badge-green { background: rgba(0,212,170,0.1); color: var(–green); border: 1px solid rgba(0,212,170,0.3); }
+.badge-orange { background: rgba(255,140,0,0.1); color: var(–orange); border: 1px solid rgba(255,140,0,0.3); }
+
+/* ── INPUTS ── */
+.input-group { margin-bottom: 16px; }
+.input-label { font-size: 11px; color: var(–text2); margin-bottom: 6px; letter-spacing: 0.08em; display: block; }
+input[type=“text”], input[type=“number”], textarea, select {
+width: 100%;
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 8px;
+color: var(–text);
+font-family: var(–font-mono);
+font-size: 14px;
+padding: 12px 14px;
+outline: none;
+-webkit-appearance: none;
+appearance: none;
+transition: border-color 0.2s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(–accent); }
+textarea { resize: none; min-height: 80px; }
+select { background-image: url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘12’ height=‘12’ viewBox=‘0 0 12 12’%3E%3Cpath fill=’%23888’ d=‘M6 8L1 3h10z’/%3E%3C/svg%3E”); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+/* ── PROGRESS ── */
+.progress-bar {
+height: 2px;
+background: var(–border);
+border-radius: 1px;
+margin-bottom: 24px;
+overflow: hidden;
+}
+.progress-fill { height: 100%; background: var(–accent); transition: width 0.4s ease; border-radius: 1px; }
+
+/* ── QUESTION CARD ── */
+.question-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 16px;
+padding: 22px;
+margin-bottom: 20px;
+min-height: 120px;
+}
+.question-num {
+font-size: 10px;
+color: var(–text3);
+letter-spacing: 0.15em;
+margin-bottom: 10px;
+}
+.question-text {
+font-family: var(–font-display);
+font-size: 18px;
+font-weight: 600;
+line-height: 1.4;
+color: var(–text);
+}
+
+/* ── MIC BUTTON ── */
+.mic-container {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 12px;
+padding: 20px 0;
+}
+.mic-btn {
+width: 72px; height: 72px;
+border-radius: 50%;
+border: 2px solid var(–border);
+background: var(–surface2);
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: all 0.2s;
+position: relative;
+}
+.mic-btn.recording {
+border-color: var(–red);
+background: rgba(255,68,68,0.15);
+animation: pulse 1.5s infinite;
+}
+.mic-btn svg { width: 28px; height: 28px; color: var(–text2); }
+.mic-btn.recording svg { color: var(–red); }
+@keyframes pulse {
+0%, 100% { box-shadow: 0 0 0 0 rgba(255,68,68,0.3); }
+50% { box-shadow: 0 0 0 12px rgba(255,68,68,0); }
+}
+.mic-label { font-size: 11px; color: var(–text3); letter-spacing: 0.1em; }
+
+/* ── ALERT ── */
+.alert {
+padding: 12px 14px;
+border-radius: 8px;
+font-size: 12px;
+margin-bottom: 10px;
+line-height: 1.5;
+border-left: 3px solid;
+}
+.alert-red { background: rgba(255,68,68,0.08); border-color: var(–red); color: #ffaaaa; }
+.alert-yellow { background: rgba(232,240,0,0.06); border-color: var(–yellow); color: #f0f0aa; }
+.alert-green { background: rgba(0,212,170,0.08); border-color: var(–green); color: #aafff0; }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(–border); margin: 20px 0; }
+
+/* ── HOME ── */
+.home-header {
+padding: 10px 0 24px;
+}
+.logo-mark {
+font-family: var(–font-display);
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.2em;
+color: var(–accent);
+text-transform: uppercase;
+margin-bottom: 16px;
+}
+.home-title {
+font-family: var(–font-display);
+font-size: 36px;
+font-weight: 800;
+line-height: 1.05;
+margin-bottom: 8px;
+}
+.home-sub { color: var(–text2); font-size: 12px; line-height: 1.6; }
+
+.module-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 14px;
+padding: 18px;
+margin-bottom: 10px;
+cursor: pointer;
+transition: all 0.2s;
+display: flex;
+align-items: center;
+gap: 14px;
+position: relative;
+overflow: hidden;
+}
+.module-card:active { transform: scale(0.98); }
+.module-card::before {
+content: ‘’;
+position: absolute;
+left: 0; top: 0; bottom: 0;
+width: 3px;
+}
+.module-card.m1::before { background: var(–accent); }
+.module-card.m2::before { background: var(–accent3); }
+.module-card.m3::before { background: var(–orange); }
+.module-card.m4::before { background: #aa88ff; }
+.module-card.m5::before { background: var(–red); }
+.module-icon {
+width: 44px; height: 44px;
+border-radius: 10px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 20px;
+flex-shrink: 0;
+}
+.module-info { flex: 1; min-width: 0; }
+.module-name {
+font-family: var(–font-display);
+font-size: 14px;
+font-weight: 700;
+margin-bottom: 3px;
+}
+.module-desc { font-size: 11px; color: var(–text2); line-height: 1.4; }
+.module-arrow { color: var(–text3); flex-shrink: 0; }
+
+/* ── DASHBOARD METRICS ── */
+.metric-row {
+display: flex;
+gap: 10px;
+margin-bottom: 10px;
+}
+.metric-box {
+flex: 1;
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 10px;
+padding: 14px 12px;
+text-align: center;
+}
+.metric-num {
+font-family: var(–font-display);
+font-size: 30px;
+font-weight: 800;
+line-height: 1;
+margin-bottom: 4px;
+}
+.metric-label { font-size: 10px; color: var(–text2); letter-spacing: 0.08em; }
+
+/* ── CANDIDATE LIST ── */
+.candidate-row {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 14px 0;
+border-bottom: 1px solid var(–border);
+cursor: pointer;
+}
+.candidate-row:last-child { border-bottom: none; }
+.avatar {
+width: 40px; height: 40px;
+border-radius: 50%;
+background: var(–surface2);
+border: 1px solid var(–border);
+display: flex; align-items: center; justify-content: center;
+font-family: var(–font-display);
+font-size: 15px;
+font-weight: 800;
+flex-shrink: 0;
+}
+.candidate-info { flex: 1; }
+.candidate-name { font-family: var(–font-display); font-size: 14px; font-weight: 700; }
+.candidate-meta { font-size: 11px; color: var(–text2); margin-top: 2px; }
+
+/* ── COALITION MATRIX ── */
+.coalition-item {
+background: var(–surface2);
+border-radius: 10px;
+padding: 14px;
+margin-bottom: 10px;
+border: 1px solid var(–border);
+}
+.coalition-names {
+font-family: var(–font-display);
+font-size: 13px;
+font-weight: 700;
+margin-bottom: 8px;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.coalition-score-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+/* ── RADIO OPTIONS ── */
+.radio-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.radio-option {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 12px 14px;
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 8px;
+cursor: pointer;
+transition: all 0.15s;
+}
+.radio-option.selected { border-color: var(–accent); background: rgba(232,240,0,0.05); }
+.radio-option input { display: none; }
+.radio-dot {
+width: 16px; height: 16px;
+border-radius: 50%;
+border: 2px solid var(–border);
+display: flex; align-items: center; justify-content: center;
+flex-shrink: 0;
+transition: all 0.15s;
+}
+.radio-option.selected .radio-dot { border-color: var(–accent); background: var(–accent); }
+.radio-text { font-size: 13px; line-height: 1.4; }
+
+/* ── SLIDER ── */
+input[type=“range”] {
+-webkit-appearance: none;
+width: 100%;
+height: 4px;
+background: var(–border);
+border-radius: 2px;
+outline: none;
+margin: 8px 0;
+padding: 0;
+}
+input[type=“range”]::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 20px; height: 20px;
+border-radius: 50%;
+background: var(–accent);
+cursor: pointer;
+}
+
+/* ── THRESHOLD TABLE ── */
+.threshold-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 10px 0;
+border-bottom: 1px solid var(–border);
+font-size: 12px;
+}
+.threshold-row:last-child { border-bottom: none; }
+.threshold-name { color: var(–text2); }
+.threshold-val { font-family: var(–font-display); font-weight: 700; }
+
+/* ── CSV DROP ── */
+.csv-drop {
+border: 2px dashed var(–border);
+border-radius: 12px;
+padding: 32px 20px;
+text-align: center;
+cursor: pointer;
+transition: all 0.2s;
+margin-bottom: 16px;
+}
+.csv-drop:active { border-color: var(–accent); }
+.csv-drop-icon { font-size: 32px; margin-bottom: 10px; }
+.csv-drop-text { font-size: 12px; color: var(–text2); line-height: 1.5; }
+
+/* ── INTERVIEW ANSWER ── */
+.answer-display {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 12px;
+font-size: 13px;
+line-height: 1.6;
+color: var(–text2);
+min-height: 60px;
+margin-bottom: 16px;
+font-style: italic;
+}
+.answer-display:empty::before { content: “Risposta apparirà qui…”; color: var(–text3); font-style: normal; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { display: none; }
+
+/* ── RESULT SCREEN ── */
+.result-header {
+text-align: center;
+padding: 20px 0;
+}
+.result-score-big {
+font-family: var(–font-display);
+font-size: 72px;
+font-weight: 800;
+line-height: 1;
+margin-bottom: 8px;
+}
+.verdict-box {
+padding: 16px;
+border-radius: 12px;
+margin-bottom: 20px;
+text-align: center;
+}
+.verdict-title {
+font-family: var(–font-display);
+font-size: 18px;
+font-weight: 800;
+margin-bottom: 6px;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+}
+.verdict-text { font-size: 12px; line-height: 1.6; }
+
+/* ── STEP INDICATOR ── */
+.step-dots {
+display: flex;
+justify-content: center;
+gap: 6px;
+margin-bottom: 20px;
+}
+.step-dot {
+width: 6px; height: 6px;
+border-radius: 50%;
+background: var(–border);
+transition: all 0.3s;
+}
+.step-dot.active { background: var(–accent); width: 20px; border-radius: 3px; }
+.step-dot.done { background: var(–text3); }
+
+/* ── SUSTAINABILITY ── */
+.sustain-row {
+display: flex;
+justify-content: space-between;
+padding: 10px 0;
+border-bottom: 1px solid var(–border);
+font-size: 13px;
+align-items: center;
+}
+.sustain-row:last-child { border-bottom: none; }
+
+/* ── MODAL OVERLAY ── */
+.modal {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.85);
+z-index: 200;
+align-items: flex-end;
+padding: 0;
+}
+.modal.open { display: flex; }
+.modal-sheet {
+background: var(–surface);
+border-radius: 20px 20px 0 0;
+padding: 24px 20px calc(var(–safe-bottom) + 24px);
+width: 100%;
+max-height: 85vh;
+overflow-y: auto;
+animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle {
+width: 36px; height: 4px;
+background: var(–border);
+border-radius: 2px;
+margin: 0 auto 20px;
+}
+.modal-title {
+font-family: var(–font-display);
+font-size: 20px;
+font-weight: 800;
+margin-bottom: 16px;
+}
+
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════════════ HOME ═══════════════ -->
+
+  <div id="screen-home" class="screen active">
+    <div class="home-header">
+      <div class="logo-mark">● BDE v1.0</div>
+      <div class="home-title">Bar Decision<br>Engine</div>
+      <div class="home-sub">Piattaforma decisionale per micro-imprese. Profilazione predittiva del personale.</div>
+    </div>
+
+```
+<div class="metric-row">
+  <div class="metric-box">
+    <div class="metric-num" id="home-candidates">0</div>
+    <div class="metric-label">Candidati</div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-num" id="home-team">0</div>
+    <div class="metric-label">Team</div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-num" id="home-risk" style="color: var(--text3)">—</div>
+    <div class="metric-label">Rischio</div>
+  </div>
+</div>
+
+<div class="section-label">Moduli</div>
+
+<div class="module-card m1" onclick="goTo('screen-interview')">
+  <div class="module-icon" style="background: rgba(232,240,0,0.1);">👤</div>
+  <div class="module-info">
+    <div class="module-name">Intervista Candidato</div>
+    <div class="module-desc">Colloquio adattivo · Profilazione comportamentale</div>
+  </div>
+  <svg class="module-arrow" viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+</div>
+
+<div class="module-card m2" onclick="goTo('screen-owner')">
+  <div class="module-icon" style="background: rgba(0,212,170,0.1);">🏛️</div>
+  <div class="module-info">
+    <div class="module-name">Profilo Titolare</div>
+    <div class="module-desc">Leadership · Stile gestionale · Pattern relazionali</div>
+  </div>
+  <svg class="module-arrow" viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+</div>
+
+<div class="module-card m3" onclick="goTo('screen-sales')">
+  <div class="module-icon" style="background: rgba(255,140,0,0.1);">📊</div>
+  <div class="module-info">
+    <div class="module-name">Analisi Vendite</div>
+    <div class="module-desc">CSV import · Picchi · Ottimizzazione turni</div>
+  </div>
+  <svg class="module-arrow" viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+</div>
+
+<div class="module-card m4" onclick="goTo('screen-matching')">
+  <div class="module-icon" style="background: rgba(170,136,255,0.1);">🔗</div>
+  <div class="module-info">
+    <div class="module-name">Matching & Coalizione</div>
+    <div class="module-desc">Compatibilità team · Matrice rischio coalizione</div>
+  </div>
+  <svg class="module-arrow" viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+</div>
+
+<div class="module-card m5" onclick="goTo('screen-simulation')">
+  <div class="module-icon" style="background: rgba(255,68,68,0.1);">⚡</div>
+  <div class="module-info">
+    <div class="module-name">Simulazione & Soglie</div>
+    <div class="module-desc">Scenari rischio · Soglie decisionali · Indici</div>
+  </div>
+  <svg class="module-arrow" viewBox="0 0 20 20" fill="currentColor" width="16"><path d="M7 5l5 5-5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════ INTERVIEW ═══════════════ -->
+
+  <div id="screen-interview" class="screen">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+      <button onclick="goBack()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0;">←</button>
+      <div class="page-title">Intervista</div>
+    </div>
+    <div class="page-sub">Candidato — Profilazione Comportamentale</div>
+
+```
+<!-- SETUP -->
+<div id="interview-setup">
+  <div class="input-group">
+    <label class="input-label">Nome candidato</label>
+    <input type="text" id="cand-name" placeholder="Es. Marco Rossi" autocomplete="off">
+  </div>
+  <div class="input-group">
+    <label class="input-label">Ruolo</label>
+    <select id="cand-role">
+      <option value="barista">Barista</option>
+      <option value="cameriere">Cameriere/a</option>
+      <option value="cassa">Cassa</option>
+      <option value="tuttofare">Tuttofare</option>
+      <option value="magazzino">Magazzino</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <label class="input-label">Tipo contratto previsto</label>
+    <select id="cand-contract">
+      <option value="stagionale">Stagionale</option>
+      <option value="determinato">Tempo determinato</option>
+      <option value="indeterminato">Tempo indeterminato</option>
+      <option value="parttime">Part-time</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <label class="input-label">Modalità risposta</label>
+    <select id="cand-mode">
+      <option value="text">Testo scritto</option>
+      <option value="voice">Voce (trascrizione automatica)</option>
+    </select>
+  </div>
+  <button class="btn btn-primary" onclick="startInterview()">▶ AVVIA COLLOQUIO</button>
+</div>
+
+<!-- INTERVIEW IN PROGRESS -->
+<div id="interview-active" style="display:none;">
+  <div class="step-dots" id="step-dots"></div>
+  <div class="progress-bar"><div class="progress-fill" id="interview-progress"></div></div>
+
+  <div class="question-card">
+    <div class="question-num" id="q-num">DOMANDA 1 / 8</div>
+    <div class="question-text" id="q-text"></div>
+  </div>
+
+  <div id="voice-section" style="display:none;">
+    <div class="mic-container">
+      <div class="mic-btn" id="mic-btn" onclick="toggleRecording()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+        </svg>
+      </div>
+      <div class="mic-label" id="mic-label">TIENI PREMUTO PER REGISTRARE</div>
+    </div>
+    <div class="answer-display" id="voice-transcript"></div>
+  </div>
+
+  <div id="text-section" style="display:none;">
+    <div class="input-group">
+      <textarea id="text-answer" placeholder="Scrivi la risposta del candidato..." rows="4"></textarea>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px;">
+    <button class="btn btn-secondary btn-sm" onclick="skipQuestion()" style="flex:1;">Salta</button>
+    <button class="btn btn-primary" onclick="nextQuestion()" style="flex:2;">Avanti →</button>
+  </div>
+
+  <div id="critical-alert" style="display:none; margin-top:16px;">
+    <div class="alert alert-red">⚠️ <strong>CRITICITÀ RILEVATA</strong> — Domanda di controllo attivata automaticamente.</div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="interview-result" style="display:none;">
+  <div class="result-header">
+    <div style="color:var(--text2); font-size:11px; letter-spacing:0.1em; margin-bottom:8px;">INDICE RISCHIO ASSUNZIONE</div>
+    <div class="result-score-big" id="result-ira">—</div>
+    <div id="result-badge"></div>
+  </div>
+
+  <div id="verdict-container"></div>
+
+  <div class="section-label">Score per asse</div>
+  <div class="score-grid" id="result-axes"></div>
+
+  <div class="section-label">Alert rilevati</div>
+  <div id="result-alerts"></div>
+
+  <div class="section-label">Soglia decisionale</div>
+  <div id="threshold-verdict" class="card"></div>
+
+  <div style="display:flex; gap:10px; margin-top:20px;">
+    <button class="btn btn-secondary" style="flex:1;" onclick="resetInterview()">↩ Nuovo</button>
+    <button class="btn btn-primary" style="flex:1;" onclick="saveCandidate()">💾 Salva</button>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════ OWNER ═══════════════ -->
+
+  <div id="screen-owner" class="screen">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+      <button onclick="goBack()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0;">←</button>
+      <div class="page-title">Titolare</div>
+    </div>
+    <div class="page-sub">Profilazione Stile Gestionale</div>
+
+```
+<div id="owner-setup">
+  <div class="card">
+    <div class="card-title">Perché questa intervista</div>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7;">La maggior parte dei conflitti nasce da una percezione distorta che il titolare ha di sé stesso. Questo colloquio usa scenari reali della tua attività per misurare il tuo stile gestionale effettivo — non quello che credi di avere.</p>
+  </div>
+  <button class="btn btn-primary" onclick="startOwnerInterview()">▶ AVVIA PROFILAZIONE</button>
+</div>
+
+<div id="owner-active" style="display:none;">
+  <div class="progress-bar"><div class="progress-fill" id="owner-progress"></div></div>
+  <div class="question-card">
+    <div class="question-num" id="oq-num">DOMANDA 1 / 8</div>
+    <div class="question-text" id="oq-text"></div>
+  </div>
+  <div class="radio-group" id="owner-options"></div>
+  <button class="btn btn-primary" onclick="nextOwnerQuestion()">Avanti →</button>
+</div>
+
+<div id="owner-result" style="display:none;">
+  <div class="result-header">
+    <div style="color:var(--text2); font-size:11px; letter-spacing:0.1em; margin-bottom:8px;">PROFILO TITOLARE</div>
+    <div class="result-score-big" id="owner-type" style="font-size:32px; color:var(--accent3);">—</div>
+  </div>
+  <div id="owner-profile-card"></div>
+  <div class="section-label">Assi gestionali</div>
+  <div class="score-grid" id="owner-axes"></div>
+  <div class="section-label">Compatibilità ideale candidato</div>
+  <div id="owner-ideal"></div>
+  <button class="btn btn-secondary" style="margin-top:16px;" onclick="resetOwner()">↩ Rifai profilazione</button>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════ SALES ═══════════════ -->
+
+  <div id="screen-sales" class="screen">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+      <button onclick="goBack()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0;">←</button>
+      <div class="page-title">Vendite</div>
+    </div>
+    <div class="page-sub">Analisi Operativa CSV</div>
+
+```
+<div id="sales-upload">
+  <div class="csv-drop" onclick="document.getElementById('csv-file').click()">
+    <div class="csv-drop-icon">📂</div>
+    <div class="csv-drop-text">Tocca per importare CSV<br><span style="color:var(--text3)">dal tuo gestionale</span></div>
+    <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="loadCSV(event)">
+  </div>
+
+  <div class="section-label">Oppure inserisci dati manualmente</div>
+
+  <div class="card">
+    <div class="card-title">Dati manuali settimanali</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+      <div>
+        <label class="input-label">Incasso Lun €</label>
+        <input type="number" id="s-mon" placeholder="0">
+      </div>
+      <div>
+        <label class="input-label">Incasso Mar €</label>
+        <input type="number" id="s-tue" placeholder="0">
+      </div>
+      <div>
+        <label class="input-label">Incasso Mer €</label>
+        <input type="number" id="s-wed" placeholder="0">
+      </div>
+      <div>
+        <label class="input-label">Incasso Gio €</label>
+        <input type="number" id="s-thu" placeholder="0">
+      </div>
+      <div>
+        <label class="input-label">Incasso Ven €</label>
+        <input type="number" id="s-fri" placeholder="0">
+      </div>
+      <div>
+        <label class="input-label">Incasso Sab €</label>
+        <input type="number" id="s-sat" placeholder="0">
+      </div>
+      <div>
+        <label class="input-label">Incasso Dom €</label>
+        <input type="number" id="s-sun" placeholder="0">
+      </div>
+      <div>
+        <label class="input-label">Ore apertura/g</label>
+        <input type="number" id="s-hours" placeholder="10">
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Costo orario personale € (tot)</label>
+      <input type="number" id="s-staffcost" placeholder="Es. 25">
+    </div>
+    <div class="input-group">
+      <label class="input-label">N° persone in servizio (media)</label>
+      <input type="number" id="s-staff-n" placeholder="2">
+    </div>
+    <button class="btn btn-primary" onclick="analyzeSales()">📊 ANALIZZA</button>
+  </div>
+</div>
+
+<div id="sales-result" style="display:none;">
+  <div class="section-label">Performance settimanale</div>
+  <div id="sales-bars"></div>
+
+  <div class="section-label">Indici operativi</div>
+  <div class="score-grid" id="sales-kpi"></div>
+
+  <div class="section-label">Sostenibilità economica team</div>
+  <div class="card" id="sustainability-card"></div>
+
+  <div class="section-label">Raccomandazioni turni</div>
+  <div id="sales-recommendations"></div>
+
+  <button class="btn btn-secondary" style="margin-top:16px;" onclick="resetSales()">↩ Nuovo</button>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════ MATCHING ═══════════════ -->
+
+  <div id="screen-matching" class="screen">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+      <button onclick="goBack()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0;">←</button>
+      <div class="page-title">Matching</div>
+    </div>
+    <div class="page-sub">Team · Coalizione · Compatibilità</div>
+
+```
+<div class="section-label">Candidati salvati</div>
+<div id="candidates-list">
+  <div style="color:var(--text3); font-size:12px; padding:16px 0; text-align:center;">Nessun candidato. Avvia prima un'intervista.</div>
+</div>
+
+<div class="section-label">Matrice rischio coalizione</div>
+<div id="coalition-matrix">
+  <div style="color:var(--text3); font-size:12px; padding:16px 0; text-align:center;">Servono almeno 2 candidati salvati.</div>
+</div>
+
+<div class="section-label">Compatibilità con titolare</div>
+<div id="owner-matching">
+  <div style="color:var(--text3); font-size:12px; padding:16px 0; text-align:center;">Completa prima la profilazione titolare.</div>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════ SIMULATION ═══════════════ -->
+
+  <div id="screen-simulation" class="screen">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+      <button onclick="goBack()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0;">←</button>
+      <div class="page-title">Simulazione</div>
+    </div>
+    <div class="page-sub">Scenari Rischio · Soglie Decisionali</div>
+
+```
+<div class="section-label">Soglie decisionali attive</div>
+<div class="card">
+  <div class="threshold-row">
+    <span class="threshold-name">Rischio Assunzione</span>
+    <span class="threshold-val" style="color:var(--red)">> 65 → NO</span>
+  </div>
+  <div class="threshold-row">
+    <span class="threshold-name">Rischio Coalizione</span>
+    <span class="threshold-val" style="color:var(--orange)">> 70 → TURNI SEPARATI</span>
+  </div>
+  <div class="threshold-row">
+    <span class="threshold-name">Confidence profilo</span>
+    <span class="threshold-val" style="color:var(--yellow)">< 60% → COLLOQUIO MANUALE</span>
+  </div>
+  <div class="threshold-row">
+    <span class="threshold-name">Rischio Vertenza</span>
+    <span class="threshold-val" style="color:var(--red)">> 60 → CONTRATTO BREVE</span>
+  </div>
+  <div class="threshold-row">
+    <span class="threshold-name">Sostenibilità Team</span>
+    <span class="threshold-val" style="color:var(--orange)">< 30% margine → BLOCCO</span>
+  </div>
+</div>
+
+<div class="section-label">Simula scenario</div>
+<div class="card">
+  <div class="input-group">
+    <label class="input-label">Tipo scenario</label>
+    <select id="sim-type">
+      <option value="new_hire">Nuovo dipendente + staff attuale</option>
+      <option value="peak">Picco turistico + staff fragile</option>
+      <option value="salary">Aumento stipendio richiesto</option>
+      <option value="overlap">Turni sovrapposti profili critici</option>
+      <option value="low_season">Bassa stagione + pressione economica</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <label class="input-label">Intensità scenario (1–10)</label>
+    <input type="range" id="sim-intensity" min="1" max="10" value="5">
+    <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text3);">
+      <span>Lieve</span><span id="sim-intensity-val">5</span><span>Estremo</span>
+    </div>
+  </div>
+  <div class="input-group">
+    <label class="input-label">N° persone coinvolte</label>
+    <input type="number" id="sim-people" value="2" min="1" max="10">
+  </div>
+  <button class="btn btn-primary" onclick="runSimulation()">⚡ SIMULA</button>
+</div>
+
+<div id="sim-result" style="display:none;">
+  <div class="section-label">Risultato simulazione</div>
+  <div id="sim-output"></div>
+</div>
+
+<div class="section-label">Follow-up post-assunzione</div>
+<div class="card">
+  <div class="card-title">Check 30 / 60 / 90 giorni</div>
+  <p style="font-size:12px; color:var(--text2); line-height:1.6; margin-bottom:14px;">Avvia una verifica rapida sull'andamento reale del dipendente. I dati vengono confrontati con il profilo predittivo per calibrare il sistema.</p>
+  <div class="input-group">
+    <label class="input-label">Seleziona candidato</label>
+    <select id="followup-candidate">
+      <option value="">— Nessun candidato salvato —</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <label class="input-label">Fase</label>
+    <select id="followup-phase">
+      <option value="30">30 giorni</option>
+      <option value="60">60 giorni</option>
+      <option value="90">90 giorni</option>
+    </select>
+  </div>
+  <button class="btn btn-secondary" onclick="startFollowup()">📋 AVVIA CHECK</button>
+</div>
+```
+
+  </div>
+
+  <!-- ═══════════════ BOTTOM NAV ═══════════════ -->
+
+  <nav id="nav">
+    <button class="nav-btn active" id="nav-home" onclick="goTo('screen-home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      HOME
+    </button>
+    <button class="nav-btn" id="nav-screen-interview" onclick="goTo('screen-interview')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round"/></svg>
+      COLLOQUIO
+    </button>
+    <button class="nav-btn" id="nav-screen-matching" onclick="goTo('screen-matching')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round"/></svg>
+      TEAM
+    </button>
+    <button class="nav-btn" id="nav-screen-simulation" onclick="goTo('screen-simulation')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      RISCHIO
+    </button>
+  </nav>
+
+</div>
+
+<!-- ═══════════════ FOLLOWUP MODAL ═══════════════ -->
+
+<div class="modal" id="followup-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Check Post-Assunzione</div>
+    <div id="followup-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const STATE = {
+  candidates: [],
+  ownerProfile: null,
+  salesData: null,
+  currentScreen: 'screen-home',
+  interview: {
+    candidateName: '',
+    role: '',
+    contract: '',
+    mode: 'text',
+    currentQ: 0,
+    answers: [],
+    criticalFlags: 0,
+    extraQuestions: false
+  },
+  ownerInterview: {
+    currentQ: 0,
+    answers: []
+  }
+};
+
+// Load from localStorage
+function loadState() {
+  try {
+    const saved = localStorage.getItem('bde_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      STATE.candidates = parsed.candidates || [];
+      STATE.ownerProfile = parsed.ownerProfile || null;
+      STATE.salesData = parsed.salesData || null;
+    }
+  } catch(e) {}
+  updateHome();
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('bde_state', JSON.stringify({
+      candidates: STATE.candidates,
+      ownerProfile: STATE.ownerProfile,
+      salesData: STATE.salesData
+    }));
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const navBtn = document.getElementById('nav-' + screenId) || document.getElementById('nav-home');
+  if (navBtn) navBtn.classList.add('active');
+  STATE.currentScreen = screenId;
+  if (screenId === 'screen-matching') renderMatching();
+  if (screenId === 'screen-home') updateHome();
+}
+
+function goBack() { goTo('screen-home'); }
+
+// ═══════════════════════════════════════════
+//  HOME
+// ═══════════════════════════════════════════
+function updateHome() {
+  document.getElementById('home-candidates').textContent = STATE.candidates.length;
+  const team = STATE.candidates.filter(c => c.saved_as === 'team').length;
+  document.getElementById('home-team').textContent = team;
+  if (STATE.candidates.length > 0) {
+    const avgRisk = Math.round(STATE.candidates.reduce((a,c) => a + c.ira, 0) / STATE.candidates.length);
+    const el = document.getElementById('home-risk');
+    el.textContent = avgRisk;
+    el.style.color = avgRisk > 65 ? 'var(--red)' : avgRisk > 40 ? 'var(--orange)' : 'var(--green)';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  INTERVIEW QUESTIONS
+// ═══════════════════════════════════════════
+const INTERVIEW_QUESTIONS = [
+  {
+    id: 'pressure',
+    axis: 'pressione',
+    text: "Sabato sera, locale pieno, fila di 15 persone, il tuo collega si è fermato alla cassa perché ha un problema con il sistema. I clienti iniziano a lamentarsi. Cosa fai esattamente, passo per passo?",
+    control: "Come ti sentivi in quel momento? Hai mai vissuto qualcosa di simile? Come è andata?",
+    criticalKeywords: ['non so', 'dipende', 'panico', 'mi innervosisco', 'non riesco']
+  },
+  {
+    id: 'authority',
+    axis: 'autorità',
+    text: "Il titolare ti chiede di fare qualcosa in un modo che secondo te è sbagliato o meno efficiente. Cosa fai?",
+    control: "Puoi fare un esempio concreto di quando ti è successa una cosa simile?",
+    criticalKeywords: ['faccio quello che voglio', 'ignoro', 'non rispetto', 'dico che ha torto davanti a tutti']
+  },
+  {
+    id: 'economic',
+    axis: 'economico',
+    text: "Hai mai avuto un periodo in cui le spese fisse mensili erano difficili da coprire con lo stipendio? Come l'hai gestito?",
+    control: "Quanto ti aspetti di guadagnare mensilmente per sentirti stabile economicamente?",
+    criticalKeywords: ['debiti', 'prestiti', 'non riuscivo a pagare', 'rate arretrate']
+  },
+  {
+    id: 'conflict',
+    axis: 'conflitto',
+    text: "Descrivi un conflitto reale che hai avuto con un collega di lavoro. Cos'è successo, chi ha fatto cosa, come si è risolto?",
+    control: "A distanza di tempo pensi di aver gestito la cosa nel modo giusto?",
+    criticalKeywords: ['sua colpa', 'colpa loro', 'sempre lui/lei', 'andavo dal titolare', 'denunciato', 'me ne sono andato sbattendo']
+  },
+  {
+    id: 'coalition',
+    axis: 'coalizione',
+    text: "Ti è mai capitato di parlare male del titolare o dell'azienda con i colleghi durante il lavoro? Come è andata?",
+    control: "Come gestisci quando sei in disaccordo con una decisione aziendale?",
+    criticalKeywords: ['sì sempre', 'tutti lo facevano', 'ci organizzavamo tra di noi', 'ci siamo messi daccordo']
+  },
+  {
+    id: 'stability',
+    axis: 'stabilità',
+    text: "Hai cambiato più di 3 lavori negli ultimi 2 anni? Per quali motivi hai lasciato gli ultimi 2?",
+    control: "Come mai hai deciso di lasciare proprio in quel momento e non prima o dopo?",
+    criticalKeywords: ['sempre cambiato', 'mi annoiavo', 'non mi piaceva nessuno', 'tutti i titolari erano uguali']
+  },
+  {
+    id: 'ambition',
+    axis: 'ambizione',
+    text: "Dove ti vedi professionalmente tra 2 anni? Cosa ti aspetti da questo lavoro oltre allo stipendio?",
+    control: "Hai mai detto ad un titolare cosa ti aspettavi in modo diretto?",
+    criticalKeywords: ['voglio fare il titolare io', 'mi aspetto molto di più', 'questo è solo temporaneo']
+  },
+  {
+    id: 'manipulation',
+    axis: 'manipolazione',
+    text: "Hai mai convinto qualcuno a fare qualcosa che inizialmente non voleva fare? Come hai fatto?",
+    control: "Ti consideri una persona influente sugli altri? Fai un esempio concreto.",
+    criticalKeywords: ['sempre', 'tutti mi seguono', 'so come prenderli', 'trovo sempre il modo']
+  }
+];
+
+const CONTROL_QUESTIONS = [
+  "Hai descritto la situazione in termini generali. Puoi raccontarmi un episodio specifico e reale in cui questo è successo?",
+  "La tua risposta precedente e questa sembrano contraddirsi. Puoi chiarire?",
+  "Concretamente: nell'ultimo anno di lavoro, quante volte circa ti è capitata una situazione simile?"
+];
+
+// ═══════════════════════════════════════════
+//  INTERVIEW LOGIC
+// ═══════════════════════════════════════════
+let isRecording = false;
+let recognition = null;
+
+function startInterview() {
+  const name = document.getElementById('cand-name').value.trim();
+  if (!name) { alert('Inserisci il nome del candidato'); return; }
+  STATE.interview.candidateName = name;
+  STATE.interview.role = document.getElementById('cand-role').value;
+  STATE.interview.contract = document.getElementById('cand-contract').value;
+  STATE.interview.mode = document.getElementById('cand-mode').value;
+  STATE.interview.currentQ = 0;
+  STATE.interview.answers = [];
+  STATE.interview.criticalFlags = 0;
+  STATE.interview.extraQuestions = false;
+
+  document.getElementById('interview-setup').style.display = 'none';
+  document.getElementById('interview-active').style.display = 'block';
+  document.getElementById('interview-result').style.display = 'none';
+
+  renderStepDots();
+  showQuestion();
+}
+
+function renderStepDots() {
+  const dots = document.getElementById('step-dots');
+  dots.innerHTML = INTERVIEW_QUESTIONS.map((_, i) =>
+    `<div class="step-dot ${i === 0 ? 'active' : ''}" id="dot-${i}"></div>`
+  ).join('');
+}
+
+function showQuestion() {
+  const q = STATE.interview.currentQ;
+  const total = INTERVIEW_QUESTIONS.length;
+  const question = INTERVIEW_QUESTIONS[q];
+  const mode = STATE.interview.mode;
+
+  document.getElementById('q-num').textContent = `DOMANDA ${q+1} / ${total}`;
+  document.getElementById('q-text').textContent = question.text;
+  document.getElementById('interview-progress').style.width = `${((q) / total) * 100}%`;
+
+  document.getElementById('voice-section').style.display = mode === 'voice' ? 'block' : 'none';
+  document.getElementById('text-section').style.display = mode === 'text' ? 'block' : 'none';
+  document.getElementById('critical-alert').style.display = 'none';
+  document.getElementById('text-answer').value = '';
+  document.getElementById('voice-transcript').textContent = '';
+
+  // Update dots
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i < q) d.classList.add('done');
+    if (i === q) d.classList.add('active');
+  });
+
+  if (mode === 'voice') setupVoiceRecognition();
+}
+
+function setupVoiceRecognition() {
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.lang = 'it-IT';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.onresult = (e) => {
+      let transcript = '';
+      for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+      document.getElementById('voice-transcript').textContent = transcript;
+    };
+    recognition.onend = () => {
+      isRecording = false;
+      document.getElementById('mic-btn').classList.remove('recording');
+      document.getElementById('mic-label').textContent = 'TIENI PREMUTO PER REGISTRARE';
+    };
+  }
+}
+
+function toggleRecording() {
+  if (!recognition) { setupVoiceRecognition(); }
+  if (!recognition) {
+    alert('Riconoscimento vocale non disponibile. Usa la modalità testo.');
+    return;
+  }
+  if (!isRecording) {
+    recognition.start();
+    isRecording = true;
+    document.getElementById('mic-btn').classList.add('recording');
+    document.getElementById('mic-label').textContent = 'REGISTRAZIONE IN CORSO...';
+  } else {
+    recognition.stop();
+    isRecording = false;
+    document.getElementById('mic-btn').classList.remove('recording');
+    document.getElementById('mic-label').textContent = 'TIENI PREMUTO PER REGISTRARE';
+  }
+}
+
+function getCurrentAnswer() {
+  const mode = STATE.interview.mode;
+  if (mode === 'voice') return document.getElementById('voice-transcript').textContent.trim();
+  return document.getElementById('text-answer').value.trim();
+}
+
+function analyzeAnswer(answer, question) {
+  const lower = answer.toLowerCase();
+  let flags = 0;
+  let criticalFound = [];
+
+  question.criticalKeywords.forEach(kw => {
+    if (lower.includes(kw)) { flags++; criticalFound.push(kw); }
+  });
+
+  const wordCount = answer.split(' ').filter(w => w.length > 2).length;
+  const isVague = wordCount < 15;
+  const hasConcreteEpisode = lower.includes('una volta') || lower.includes('ho') ||
+    lower.includes('quando') || lower.includes('ricordo') || lower.includes('mi è capitato');
+
+  return {
+    flags,
+    criticalFound,
+    isVague,
+    hasConcreteEpisode,
+    wordCount,
+    score: calculateAxisScore(flags, isVague, hasConcreteEpisode, wordCount)
+  };
+}
+
+function calculateAxisScore(flags, isVague, hasConcrete, wordCount) {
+  let score = 7;
+  score -= flags * 1.5;
+  if (isVague) score -= 1.5;
+  if (!hasConcrete) score -= 1;
+  if (wordCount > 30) score += 0.5;
+  return Math.max(0, Math.min(10, Math.round(score * 10) / 10));
+}
+
+function nextQuestion() {
+  const answer = getCurrentAnswer();
+  const q = INTERVIEW_QUESTIONS[STATE.interview.currentQ];
+  const analysis = analyzeAnswer(answer, q);
+
+  STATE.interview.answers.push({
+    questionId: q.id,
+    axis: q.axis,
+    answer,
+    analysis
+  });
+
+  if (analysis.flags >= 2 && !STATE.interview.extraQuestions) {
+    STATE.interview.criticalFlags++;
+    document.getElementById('critical-alert').style.display = 'block';
+    const nextQ = STATE.interview.currentQ + 1;
+    if (nextQ < INTERVIEW_QUESTIONS.length) {
+      INTERVIEW_QUESTIONS[nextQ].text = CONTROL_QUESTIONS[Math.floor(Math.random() * CONTROL_QUESTIONS.length)] + '\n\n' + INTERVIEW_QUESTIONS[nextQ].text;
+      STATE.interview.extraQuestions = true;
+    }
+  }
+
+  STATE.interview.currentQ++;
+  if (STATE.interview.currentQ >= INTERVIEW_QUESTIONS.length) {
+    showInterviewResult();
+  } else {
+    showQuestion();
+  }
+}
+
+function skipQuestion() {
+  STATE.interview.answers.push({
+    questionId: INTERVIEW_QUESTIONS[STATE.interview.currentQ].id,
+    axis: INTERVIEW_QUESTIONS[STATE.interview.currentQ].axis,
+    answer: '',
+    analysis: { flags: 0, isVague: true, hasConcreteEpisode: false, wordCount: 0, score: 5 }
+  });
+  STATE.interview.currentQ++;
+  if (STATE.interview.currentQ >= INTERVIEW_QUESTIONS.length) showInterviewResult();
+  else showQuestion();
+}
+
+function calculateIRA(answers) {
+  const axes = {};
+  answers.forEach(a => { axes[a.axis] = a.analysis.score; });
+  const avgScore = Object.values(axes).reduce((s, v) => s + v, 0) / Object.values(axes).length;
+  const ira = Math.round((10 - avgScore) * 10);
+  return Math.min(100, Math.max(0, ira));
+}
+
+function calculateCoalitionRisk(answers) {
+  const coalesce = answers.find(a => a.axis === 'coalizione');
+  const authority = answers.find(a => a.axis === 'autorità');
+  const ambition = answers.find(a => a.axis === 'ambizione');
+  const c = coalesce ? (10 - coalesce.analysis.score) : 5;
+  const a = authority ? (10 - authority.analysis.score) : 5;
+  const amb = ambition ? (10 - ambition.analysis.score) : 5;
+  return Math.min(100, Math.round((c * 3 + a * 2 + amb * 1.5) * 2.5));
+}
+
+function calculateVertenzaRisk(answers) {
+  const conflict = answers.find(a => a.axis === 'conflitto');
+  const authority = answers.find(a => a.axis === 'autorità');
+  const economic = answers.find(a => a.axis === 'economico');
+  const c = conflict ? (10 - conflict.analysis.score) : 5;
+  const a = authority ? (10 - authority.analysis.score) : 5;
+  const e = economic ? (10 - economic.analysis.score) : 5;
+  return Math.min(100, Math.round((c * 3 + a * 2 + e * 1.5) * 2.5));
+}
+
+function calculateManipulationRisk(answers) {
+  const manip = answers.find(a => a.axis === 'manipolazione');
+  const coal = answers.find(a => a.axis === 'coalizione');
+  const m = manip ? (10 - manip.analysis.score) : 5;
+  const c = coal ? (10 - coal.analysis.score) : 5;
+  return Math.min(100, Math.round((m * 3 + c * 2) * 4));
+}
+
+function calculateConfidence(answers) {
+  const answered = answers.filter(a => a.answer.length > 0);
+  const concreteAnswers = answered.filter(a => a.analysis.hasConcreteEpisode).length;
+  const avgWords = answered.reduce((s, a) => s + a.analysis.wordCount, 0) / Math.max(answered.length, 1);
+  let conf = (answered.length / INTERVIEW_QUESTIONS.length) * 60;
+  conf += (concreteAnswers / Math.max(answered.length, 1)) * 25;
+  conf += Math.min(15, (avgWords / 50) * 15);
+  return Math.round(conf);
+}
+
+function showInterviewResult() {
+  document.getElementById('interview-active').style.display = 'none';
+  document.getElementById('interview-result').style.display = 'block';
+
+  const answers = STATE.interview.answers;
+  const ira = calculateIRA(answers);
+  const coalitionRisk = calculateCoalitionRisk(answers);
+  const vertenzaRisk = calculateVertenzaRisk(answers);
+  const manipRisk = calculateManipulationRisk(answers);
+  const confidence = calculateConfidence(answers);
+
+  // Store for saving
+  STATE.interview._result = { ira, coalitionRisk, vertenzaRisk, manipRisk, confidence, answers };
+
+  // Big score
+  const iraEl = document.getElementById('result-ira');
+  iraEl.textContent = ira;
+  iraEl.style.color = ira > 65 ? 'var(--red)' : ira > 40 ? 'var(--orange)' : 'var(--green)';
+
+  // Badge
+  const badgeEl = document.getElementById('result-badge');
+  if (ira > 65) {
+    badgeEl.innerHTML = '<span class="badge badge-red">🔴 RISCHIO ALTO</span>';
+  } else if (ira > 40) {
+    badgeEl.innerHTML = '<span class="badge badge-orange">🟡 RISCHIO MEDIO</span>';
+  } else {
+    badgeEl.innerHTML = '<span class="badge badge-green">🟢 PROFILO OK</span>';
+  }
+
+  // Verdict
+  const verdictEl = document.getElementById('verdict-container');
+  let verdictColor, verdictBg, verdictTitle, verdictText;
+  if (ira > 65) {
+    verdictColor = 'var(--red)'; verdictBg = 'rgba(255,68,68,0.08)';
+    verdictTitle = 'NON ASSUMERE';
+    verdictText = 'Il profilo presenta criticità significative. Rischio elevato di conflitti, instabilità o vertenze. Evitare assunzione stabile.';
+  } else if (ira > 40) {
+    verdictColor = 'var(--orange)'; verdictBg = 'rgba(255,140,0,0.08)';
+    verdictTitle = 'CAUTELA';
+    verdictText = 'Profilo con alcune criticità. Compatibile con contratto a termine o prova estesa. Monitorare i primi 30 giorni.';
+  } else {
+    verdictColor = 'var(--green)'; verdictBg = 'rgba(0,212,170,0.08)';
+    verdictTitle = 'PROFILO COMPATIBILE';
+    verdictText = 'Il profilo non presenta criticità significative. Verificare compatibilità con titolare e team prima della decisione finale.';
+  }
+  verdictEl.innerHTML = `<div class="verdict-box" style="background:${verdictBg}; border:1px solid ${verdictColor}40;">
+    <div class="verdict-title" style="color:${verdictColor}">${verdictTitle}</div>
+    <div class="verdict-text">${verdictText}</div>
+  </div>`;
+
+  // Axes
+  const axesEl = document.getElementById('result-axes');
+  const axisLabels = {
+    pressione: 'Gestione pressione', autorità: 'Rapporto autorità',
+    economico: 'Stabilità economica', conflitto: 'Gestione conflitto',
+    coalizione: 'Rischio coalizione', stabilità: 'Stabilità lavorativa',
+    ambizione: 'Livello ambizione', manipolazione: 'Rischio manipolaz.'
+  };
+  axesEl.innerHTML = answers.map(a => {
+    const s = a.analysis.score;
+    const color = s >= 7 ? 'var(--green)' : s >= 5 ? 'var(--orange)' : 'var(--red)';
+    return `<div class="score-item">
+      <div class="score-label">${axisLabels[a.axis] || a.axis}</div>
+      <div class="score-value" style="color:${color}">${s}</div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:${s*10}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Alerts
+  const alertsEl = document.getElementById('result-alerts');
+  const alerts = [];
+  answers.forEach(a => {
+    if (a.analysis.flags >= 2) alerts.push(`<div class="alert alert-red">⚠️ ${axisLabels[a.axis]}: segnali critici rilevati nelle risposte</div>`);
+    else if (a.analysis.isVague && !a.analysis.hasConcreteEpisode) alerts.push(`<div class="alert alert-yellow">⚡ ${axisLabels[a.axis]}: risposta vaga, nessun episodio concreto</div>`);
+  });
+  if (coalitionRisk > 70) alerts.push(`<div class="alert alert-red">🔴 Rischio coalizione elevato (${coalitionRisk}/100) — evitare turni sovrapposti con altri profili simili</div>`);
+  if (vertenzaRisk > 60) alerts.push(`<div class="alert alert-red">⚖️ Rischio vertenza elevato (${vertenzaRisk}/100) — consigliato contratto a breve termine</div>`);
+  if (confidence < 60) alerts.push(`<div class="alert alert-yellow">📊 Confidence profilo bassa (${confidence}%) — colloquio manuale integrativo obbligatorio</div>`);
+  if (manipRisk > 60) alerts.push(`<div class="alert alert-orange">🎭 Segnali di tendenza manipolativa (${manipRisk}/100)</div>`);
+  alertsEl.innerHTML = alerts.join('') || '<div class="alert alert-green">✓ Nessun alert critico rilevato</div>';
+
+  // Threshold verdict
+  const threshEl = document.getElementById('threshold-verdict');
+  const decisions = [];
+  if (ira > 65) decisions.push('🔴 IRA > 65: ASSUNZIONE NON CONSIGLIATA');
+  if (coalitionRisk > 70) decisions.push('🟠 Coalizione > 70: TURNI SEPARATI obbligatori');
+  if (confidence < 60) decisions.push('🟡 Confidence < 60%: COLLOQUIO MANUALE richiesto');
+  if (vertenzaRisk > 60) decisions.push('🔴 Vertenza > 60: SOLO CONTRATTO BREVE');
+  threshEl.innerHTML = decisions.length ?
+    `<div class="card-title">Decisioni automatiche</div>${decisions.map(d => `<div style="font-size:12px; padding:6px 0; border-bottom:1px solid var(--border)">${d}</div>`).join('')}` :
+    `<div style="font-size:12px; color:var(--green)">✓ Nessuna soglia critica superata. Procedi con valutazione matching team.</div>`;
+}
+
+function resetInterview() {
+  document.getElementById('interview-setup').style.display = 'block';
+  document.getElementById('interview-active').style.display = 'none';
+  document.getElementById('interview-result').style.display = 'none';
+  document.getElementById('cand-name').value = '';
+}
+
+function saveCandidate() {
+  const r = STATE.interview._result;
+  if (!r) return;
+  const candidate = {
+    id: Date.now(),
+    name: STATE.interview.candidateName,
+    role: STATE.interview.role,
+    contract: STATE.interview.contract,
+    ira: r.ira,
+    coalitionRisk: r.coalitionRisk,
+    vertenzaRisk: r.vertenzaRisk,
+    manipRisk: r.manipRisk,
+    confidence: r.confidence,
+    answers: r.answers,
+    axes: {},
+    saved_as: 'candidate',
+    date: new Date().toLocaleDateString('it-IT')
+  };
+  r.answers.forEach(a => { candidate.axes[a.axis] = a.analysis.score; });
+  STATE.candidates.push(candidate);
+  saveState();
+  updateHome();
+  goTo('screen-matching');
+}
+
+// ═══════════════════════════════════════════
+//  OWNER INTERVIEW
+// ═══════════════════════════════════════════
+const OWNER_QUESTIONS = [
+  {
+    text: "Un tuo dipendente arriva 10 minuti in ritardo per la terza volta consecutiva. Cosa fai esattamente?",
+    options: [
+      { text: "Lo richiamo subito davanti agli altri per dare l'esempio", axes: { controllo: 8, tolleranza: 2, direttività: 8 } },
+      { text: "Lo chiamo a parte, spiego il problema e fisso una regola chiara con conseguenze", axes: { controllo: 6, tolleranza: 4, direttività: 6 } },
+      { text: "Aspetto ancora qualche volta prima di dire qualcosa", axes: { controllo: 3, tolleranza: 8, direttività: 3 } },
+      { text: "Gli mando un messaggio scritto per avere traccia", axes: { controllo: 7, tolleranza: 4, direttività: 5 } }
+    ]
+  },
+  {
+    text: "Descrivi l'ultima persona che hai licenziato o che si è dimessa con tensione. Cos'è successo nelle ultime 2 settimane prima della fine?",
+    options: [
+      { text: "Era chiaramente sbagliata, non rispettava le regole da tempo", axes: { attribuzione_esterna: 8, rigidità: 7 } },
+      { text: "Ci sono stati errori da entrambe le parti", axes: { attribuzione_esterna: 4, rigidità: 4 } },
+      { text: "Non me lo aspettavo, è andata via improvvisamente", axes: { attribuzione_esterna: 5, rigidità: 3 } },
+      { text: "Ho preferito non rinnovarle il contratto per evitare problemi futuri", axes: { attribuzione_esterna: 6, rigidità: 8 } }
+    ]
+  },
+  {
+    text: "Cosa ti aspetti da un dipendente senza doverlo dire esplicitamente?",
+    options: [
+      { text: "Che veda cosa c'è da fare e lo faccia senza che io chieda", axes: { aspettative_implicite: 9, delega: 7 } },
+      { text: "Che segua le istruzioni che do e chieda se ha dubbi", axes: { aspettative_implicite: 4, delega: 5 } },
+      { text: "Che rispetti orari e qualità del lavoro, per il resto mi fido", axes: { aspettative_implicite: 5, delega: 6 } },
+      { text: "Non mi aspetto nulla di implicito, scrivo tutto", axes: { aspettative_implicite: 2, delega: 4 } }
+    ]
+  },
+  {
+    text: "Un dipendente ti propone un modo diverso di fare una cosa che secondo lui è più veloce. Come reagisci?",
+    options: [
+      { text: "Se non è nel mio modo, preferisco che faccia come dico io", axes: { controllo: 9, rigidità: 8, delega: 2 } },
+      { text: "Lo ascolto, se ha senso lo provo", axes: { controllo: 4, rigidità: 3, delega: 7 } },
+      { text: "Lo faccio provare in test, poi decido", axes: { controllo: 5, rigidità: 4, delega: 6 } },
+      { text: "Se funziona lo adotto subito", axes: { controllo: 3, rigidità: 2, delega: 8 } }
+    ]
+  },
+  {
+    text: "Nei mesi di bassa stagione, con meno incassi, come cambia il tuo comportamento con il personale?",
+    options: [
+      { text: "Divento più esigente, meno tollerante agli errori", axes: { pressione_economica: 8, tolleranza: 2 } },
+      { text: "Rimango uguale, i problemi economici non li porto nel lavoro quotidiano", axes: { pressione_economica: 3, tolleranza: 6 } },
+      { text: "Taglio ore e spese il prima possibile", axes: { pressione_economica: 7, tolleranza: 4 } },
+      { text: "Coinvolgo il team nel problema per trovare soluzioni insieme", axes: { pressione_economica: 4, tolleranza: 7 } }
+    ]
+  },
+  {
+    text: "Con quanta autonomia lavori meglio: staff che decide in autonomia o staff che chiede prima?",
+    options: [
+      { text: "Preferisco che chiedano sempre, anche per le piccole cose", axes: { controllo: 9, delega: 1 } },
+      { text: "Per le cose importanti vengano da me, per le piccole decidano loro", axes: { controllo: 5, delega: 6 } },
+      { text: "Più autonomia hanno, meglio è per me", axes: { controllo: 2, delega: 9 } },
+      { text: "Dipende dalla persona, con alcuni mi fido di più", axes: { controllo: 5, delega: 5 } }
+    ]
+  },
+  {
+    text: "Un tuo dipendente ha fatto un errore che ha causato una perdita economica misurabile. Come lo gestisci?",
+    options: [
+      { text: "Lo richiamo formalmente e valuto se continuare il rapporto", axes: { tolleranza: 1, rigidità: 9 } },
+      { text: "Analizzo l'errore con lui/lei per capire come evitarlo in futuro", axes: { tolleranza: 7, rigidità: 3 } },
+      { text: "Lo gestisco internamente senza farne una questione formale", axes: { tolleranza: 6, rigidità: 4 } },
+      { text: "Dipende dall'entità della perdita e da quante volte è successo", axes: { tolleranza: 5, rigidità: 5 } }
+    ]
+  },
+  {
+    text: "Come descriverebbe il tuo stile gestionale un ex-dipendente che se n'è andato bene?",
+    options: [
+      { text: "Esigente ma chiaro, sapevi sempre cosa si aspettava", axes: { self_awareness: 7, direttività: 8 } },
+      { text: "Flessibile, dava fiducia", axes: { self_awareness: 6, direttività: 3 } },
+      { text: "Un po' rigido, ma onesto", axes: { self_awareness: 8, direttività: 7 } },
+      { text: "Professionale ma distante", axes: { self_awareness: 5, direttività: 6 } }
+    ]
+  }
+];
+
+function startOwnerInterview() {
+  STATE.ownerInterview.currentQ = 0;
+  STATE.ownerInterview.answers = [];
+  document.getElementById('owner-setup').style.display = 'none';
+  document.getElementById('owner-active').style.display = 'block';
+  document.getElementById('owner-result').style.display = 'none';
+  showOwnerQuestion();
+}
+
+function showOwnerQuestion() {
+  const q = OWNER_QUESTIONS[STATE.ownerInterview.currentQ];
+  const total = OWNER_QUESTIONS.length;
+  const current = STATE.ownerInterview.currentQ;
+
+  document.getElementById('oq-num').textContent = `DOMANDA ${current+1} / ${total}`;
+  document.getElementById('oq-text').textContent = q.text;
+  document.getElementById('owner-progress').style.width = `${(current/total)*100}%`;
+
+  const optionsEl = document.getElementById('owner-options');
+  optionsEl.innerHTML = q.options.map((o, i) =>
+    `<div class="radio-option" onclick="selectOwnerOption(${i})" id="oo-${i}">
+      <div class="radio-dot"></div>
+      <div class="radio-text">${o.text}</div>
+    </div>`
+  ).join('');
+}
+
+let selectedOwnerOption = null;
+function selectOwnerOption(i) {
+  selectedOwnerOption = i;
+  document.querySelectorAll('.radio-option').forEach((el, idx) => {
+    el.classList.toggle('selected', idx === i);
+  });
+}
+
+function nextOwnerQuestion() {
+  if (selectedOwnerOption === null) return;
+  const q = OWNER_QUESTIONS[STATE.ownerInterview.currentQ];
+  STATE.ownerInterview.answers.push({
+    questionIdx: STATE.ownerInterview.currentQ,
+    selectedOption: selectedOwnerOption,
+    axes: q.options[selectedOwnerOption].axes
+  });
+  selectedOwnerOption = null;
+  STATE.ownerInterview.currentQ++;
+  if (STATE.ownerInterview.currentQ >= OWNER_QUESTIONS.length) {
+    showOwnerResult();
+  } else {
+    showOwnerQuestion();
+  }
+}
+
+function showOwnerResult() {
+  document.getElementById('owner-active').style.display = 'none';
+  document.getElementById('owner-result').style.display = 'block';
+
+  // Aggregate axes
+  const axes = {};
+  STATE.ownerInterview.answers.forEach(a => {
+    Object.entries(a.axes).forEach(([k, v]) => {
+      if (!axes[k]) axes[k] = [];
+      axes[k].push(v);
+    });
+  });
+  const avgAxes = {};
+  Object.entries(axes).forEach(([k, vals]) => {
+    avgAxes[k] = Math.round(vals.reduce((s,v) => s+v,0) / vals.length * 10) / 10;
+  });
+
+  // Determine profile type
+  const controllo = avgAxes.controllo || 5;
+  const tolleranza = avgAxes.tolleranza || 5;
+  const delega = avgAxes.delega || 5;
+  const rigidità = avgAxes.rigidità || 5;
+
+  let profileType, profileDesc, idealCandidate;
+  if (controllo >= 7 && delega <= 4) {
+    profileType = 'DIRETTIVO';
+    profileDesc = 'Lavori meglio con procedure chiare e staff che segue istruzioni precise. Le aspettative implicite sono elevate. Rischio conflitto con profili ad alta autonomia o ambizione.';
+    idealCandidate = 'Esecutivo, preciso, bassa autonomia, basso ego professionale, stabile economicamente, tolleranza alta alla gerarchia.';
+  } else if (delega >= 7 && tolleranza >= 6) {
+    profileType = 'COLLABORATIVO';
+    profileDesc = 'Funzioni bene con staff autonomo e proattivo. Dai spazio e ti aspetti iniziativa. Rischio con profili passivi o che aspettano istruzioni continue.';
+    idealCandidate = 'Alta autonomia, proattivo, problem solver, con esperienza consolidata nel ruolo.';
+  } else if (rigidità >= 7) {
+    profileType = 'STRUTTURATO';
+    profileDesc = 'Hai regole chiare e non ami le deviazioni. Gestisci bene la pressione operativa ma puoi avere difficoltà con imprevisti gestiti dal personale in autonomia.';
+    idealCandidate = 'Metodico, rispetto delle procedure, bassa propensione al conflitto, stabilità lavorativa alta.';
+  } else {
+    profileType = 'ADATTIVO';
+    profileDesc = 'Hai un approccio variabile e contestuale. Funzioni bene con diversi profili ma devi attenzione alla coerenza delle regole nel tempo.';
+    idealCandidate = 'Candidato versatile, buona stabilità emotiva, gestione autonoma dei picchi.';
+  }
+
+  STATE.ownerProfile = { type: profileType, desc: profileDesc, idealCandidate, axes: avgAxes };
+  saveState();
+
+  document.getElementById('owner-type').textContent = profileType;
+  document.getElementById('owner-profile-card').innerHTML = `
+    <div class="card">
+      <div style="font-size:13px; line-height:1.7; margin-bottom:12px;">${profileDesc}</div>
+    </div>`;
+
+  const axisLabels = {
+    controllo: 'Bisogno controllo', tolleranza: 'Tolleranza errore',
+    delega: 'Capacità delega', rigidità: 'Rigidità gestionale',
+    direttività: 'Direttività', pressione_economica: 'Reazione press.econ.',
+    aspettative_implicite: 'Aspettative implicite', self_awareness: 'Autoconsapevolezza'
+  };
+  const axesEl = document.getElementById('owner-axes');
+  axesEl.innerHTML = Object.entries(avgAxes).map(([k, v]) => {
+    const color = v >= 7 ? 'var(--red)' : v >= 5 ? 'var(--orange)' : 'var(--green)';
+    return `<div class="score-item">
+      <div class="score-label">${axisLabels[k] || k}</div>
+      <div class="score-value" style="color:${color}">${v}</div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:${v*10}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('owner-ideal').innerHTML = `<div class="alert alert-green">✓ <strong>Profilo ideale candidato:</strong> ${idealCandidate}</div>`;
+}
+
+function resetOwner() {
+  document.getElementById('owner-setup').style.display = 'block';
+  document.getElementById('owner-active').style.display = 'none';
+  document.getElementById('owner-result').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════
+//  SALES ANALYSIS
+// ═══════════════════════════════════════════
+function loadCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const lines = e.target.result.split('\n');
+    const days = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+    const values = [];
+    lines.forEach(line => {
+      const parts = line.split(',');
+      if (parts.length >= 2) {
+        const val = parseFloat(parts[1]);
+        if (!isNaN(val)) values.push(val);
+      }
+    });
+    if (values.length >= 7) {
+      ['s-mon','s-tue','s-wed','s-thu','s-fri','s-sat','s-sun'].forEach((id, i) => {
+        document.getElementById(id).value = values[i] || 0;
+      });
+    }
+  };
+  reader.readAsText(file);
+}
+
+function analyzeSales() {
+  const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+  const ids = ['s-mon','s-tue','s-wed','s-thu','s-fri','s-sat','s-sun'];
+  const values = ids.map(id => parseFloat(document.getElementById(id).value) || 0);
+  const hours = parseFloat(document.getElementById('s-hours').value) || 10;
+  const staffCost = parseFloat(document.getElementById('s-staffcost').value) || 0;
+  const staffN = parseFloat(document.getElementById('s-staff-n').value) || 2;
+
+  const total = values.reduce((s,v) => s+v, 0);
+  const avg = total / 7;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const maxDay = days[values.indexOf(max)];
+  const minDay = days[values.indexOf(min)];
+  const weeklyStaffCost = staffCost * hours * 7;
+  const margin = total > 0 ? ((total - weeklyStaffCost) / total * 100) : 0;
+  const hourlyAvg = total / (hours * 7);
+
+  STATE.salesData = { values, days, total, avg, max, min, maxDay, minDay, hours, staffCost, staffN, margin, hourlyAvg, weeklyStaffCost };
+  saveState();
+
+  document.getElementById('sales-upload').style.display = 'none';
+  document.getElementById('sales-result').style.display = 'block';
+
+  // Bars
+  const barsEl = document.getElementById('sales-bars');
+  const maxVal = max || 1;
+  barsEl.innerHTML = `<div style="display:flex; align-items:flex-end; gap:6px; height:100px; margin-bottom:16px;">` +
+    values.map((v, i) => {
+      const h = Math.round((v / maxVal) * 80);
+      const color = v === max ? 'var(--accent)' : v === min ? 'var(--red)' : 'var(--surface2)';
+      const border = v === max ? 'var(--accent)' : v === min ? 'var(--red)' : 'var(--border)';
+      return `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <div style="font-size:9px; color:var(--text3)">€${v}</div>
+        <div style="height:${Math.max(h,4)}px; width:100%; background:${color}; border:1px solid ${border}; border-radius:4px 4px 0 0;"></div>
+        <div style="font-size:10px; color:var(--text2)">${days[i]}</div>
+      </div>`;
+    }).join('') + `</div>`;
+
+  // KPIs
+  const kpiEl = document.getElementById('sales-kpi');
+  kpiEl.innerHTML = [
+    { label: 'Incasso totale', val: `€${total.toFixed(0)}`, color: 'var(--accent)' },
+    { label: 'Media/giorno', val: `€${avg.toFixed(0)}`, color: 'var(--text)' },
+    { label: 'Giorno forte', val: maxDay, color: 'var(--green)' },
+    { label: 'Giorno debole', val: minDay, color: 'var(--red)' },
+    { label: '€/ora media', val: `€${hourlyAvg.toFixed(1)}`, color: 'var(--orange)' },
+    { label: 'Margine staff', val: `${margin.toFixed(1)}%`, color: margin < 30 ? 'var(--red)' : margin < 50 ? 'var(--orange)' : 'var(--green)' }
+  ].map(k => `<div class="score-item">
+    <div class="score-label">${k.label}</div>
+    <div class="score-value" style="color:${k.color}; font-size:18px;">${k.val}</div>
+  </div>`).join('');
+
+  // Sustainability
+  const sustainEl = document.getElementById('sustainability-card');
+  let sustainVerdict, sustainColor;
+  if (margin < 20) {
+    sustainVerdict = '🔴 NON SOSTENIBILE — Il costo staff supera il margine. Ridurre ore o personale.';
+    sustainColor = 'var(--red)';
+  } else if (margin < 30) {
+    sustainVerdict = '🟠 ATTENZIONE — Margine sotto soglia minima (30%). Non assumere personale aggiuntivo.';
+    sustainColor = 'var(--orange)';
+  } else if (margin < 50) {
+    sustainVerdict = '🟡 ACCETTABILE — Margine nella norma. Monitorare stagionalità prima di nuove assunzioni.';
+    sustainColor = 'var(--yellow)';
+  } else {
+    sustainVerdict = '🟢 SOSTENIBILE — Margine sano. Struttura economica compatibile con staff attuale o espansione.';
+    sustainColor = 'var(--green)';
+  }
+  sustainEl.innerHTML = `
+    <div style="font-size:13px; color:${sustainColor}; margin-bottom:10px; font-family:var(--font-display); font-weight:700;">${sustainVerdict}</div>
+    <div class="sustain-row"><span>Incasso settimanale</span><span>€${total.toFixed(0)}</span></div>
+    <div class="sustain-row"><span>Costo staff stimato</span><span>€${weeklyStaffCost.toFixed(0)}</span></div>
+    <div class="sustain-row"><span>Margine operativo</span><span style="color:${sustainColor}">${margin.toFixed(1)}%</span></div>
+    <div class="sustain-row"><span>Indice Sostenibilità</span><span style="color:${sustainColor}">${Math.round(margin)}/100</span></div>`;
+
+  // Recommendations
+  const recEl = document.getElementById('sales-recommendations');
+  const highDays = values.map((v,i) => ({v,i})).filter(x => x.v > avg * 1.2).map(x => days[x.i]);
+  const lowDays = values.map((v,i) => ({v,i})).filter(x => x.v < avg * 0.7).map(x => days[x.i]);
+  recEl.innerHTML = [
+    highDays.length ? `<div class="alert alert-green">✓ <strong>Staff pieno necessario:</strong> ${highDays.join(', ')} — giorni sopra media del 20%+</div>` : '',
+    lowDays.length ? `<div class="alert alert-yellow">⚡ <strong>Personale ridotto sufficiente:</strong> ${lowDays.join(', ')} — giorni sotto media del 30%+</div>` : '',
+    margin < 30 ? `<div class="alert alert-red">⚠️ Il costo orario personale (€${staffCost}) su ${staffN} persone per ${hours}h non è sostenibile con questo incasso.</div>` : ''
+  ].join('');
+}
+
+function resetSales() {
+  document.getElementById('sales-upload').style.display = 'block';
+  document.getElementById('sales-result').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════
+//  MATCHING & COALITION
+// ═══════════════════════════════════════════
+function renderMatching() {
+  // Candidates list
+  const listEl = document.getElementById('candidates-list');
+  if (STATE.candidates.length === 0) {
+    listEl.innerHTML = '<div style="color:var(--text3); font-size:12px; padding:16px 0; text-align:center;">Nessun candidato. Avvia prima un\'intervista.</div>';
+  } else {
+    listEl.innerHTML = STATE.candidates.map(c => {
+      const color = c.ira > 65 ? 'var(--red)' : c.ira > 40 ? 'var(--orange)' : 'var(--green)';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+      return `<div class="candidate-row">
+        <div class="avatar">${initials}</div>
+        <div class="candidate-info">
+          <div class="candidate-name">${c.name}</div>
+          <div class="candidate-meta">${c.role} · ${c.date} · Conf. ${c.confidence}%</div>
+        </div>
+        <div>
+          <span class="badge" style="background:${color}20; color:${color}; border:1px solid ${color}40">IRA ${c.ira}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Coalition matrix
+  const coalEl = document.getElementById('coalition-matrix');
+  if (STATE.candidates.length < 2) {
+    coalEl.innerHTML = '<div style="color:var(--text3); font-size:12px; padding:16px 0; text-align:center;">Servono almeno 2 candidati salvati.</div>';
+  } else {
+    const pairs = [];
+    for (let i = 0; i < STATE.candidates.length; i++) {
+      for (let j = i+1; j < STATE.candidates.length; j++) {
+        const a = STATE.candidates[i];
+        const b = STATE.candidates[j];
+        const risk = calculatePairCoalitionRisk(a, b);
+        pairs.push({ a, b, risk });
+      }
+    }
+    pairs.sort((x,y) => y.risk - x.risk);
+    coalEl.innerHTML = pairs.map(p => {
+      const color = p.risk > 70 ? 'var(--red)' : p.risk > 50 ? 'var(--orange)' : 'var(--green)';
+      const verdict = p.risk > 70 ? 'TURNI SEPARATI' : p.risk > 50 ? 'MONITORARE' : 'COMPATIBILI';
+      return `<div class="coalition-item">
+        <div class="coalition-names">
+          ${p.a.name} <span style="color:var(--text3)">⚡</span> ${p.b.name}
+        </div>
+        <div class="coalition-score-row">
+          <div style="font-size:24px; font-family:var(--font-display); font-weight:800; color:${color}">${p.risk}</div>
+          <span class="badge" style="background:${color}20; color:${color}; border:1px solid ${color}40">${verdict}</span>
+        </div>
+        <div class="score-bar" style="margin-top:10px;"><div class="score-bar-fill" style="width:${p.risk}%; background:${color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Owner matching
+  const ownerEl = document.getElementById('owner-matching');
+  if (!STATE.ownerProfile || STATE.candidates.length === 0) {
+    ownerEl.innerHTML = '<div style="color:var(--text3); font-size:12px; padding:16px 0; text-align:center;">Completa prima la profilazione titolare.</div>';
+  } else {
+    ownerEl.innerHTML = STATE.candidates.map(c => {
+      const compat = calculateOwnerCompatibility(c, STATE.ownerProfile);
+      const color = compat >= 70 ? 'var(--green)' : compat >= 50 ? 'var(--orange)' : 'var(--red)';
+      const verdict = compat >= 70 ? 'ALTA COMPATIBILITÀ' : compat >= 50 ? 'COMPATIBILITÀ PARZIALE' : 'INCOMPATIBILE';
+      return `<div class="card" style="margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div class="card-title">${c.name}</div>
+          <span class="badge" style="background:${color}20; color:${color}; border:1px solid ${color}40">${compat}%</span>
+        </div>
+        <div style="font-size:12px; color:var(--text2); margin-bottom:8px;">${verdict}</div>
+        <div class="score-bar"><div class="score-bar-fill" style="width:${compat}%; background:${color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function calculatePairCoalitionRisk(a, b) {
+  // Coalition Risk = (bisogno appartenenza alto) + (critica autorità alta) + (frustrazione economica) + (compatibilità emotiva)
+  const aCoal = a.coalitionRisk || 50;
+  const bCoal = b.coalitionRisk || 50;
+  const aAuth = a.axes?.autorità ? (10 - a.axes.autorità) * 10 : 50;
+  const bAuth = b.axes?.autorità ? (10 - b.axes.autorità) * 10 : 50;
+  const aAmb = a.axes?.ambizione ? (10 - a.axes.ambizione) * 10 : 50;
+  const bAmb = b.axes?.ambizione ? (10 - b.axes.ambizione) * 10 : 50;
+  const combined = (aCoal * 0.3 + bCoal * 0.3 + aAuth * 0.1 + bAuth * 0.1 + aAmb * 0.1 + bAmb * 0.1);
+  return Math.min(100, Math.round(combined));
+}
+
+function calculateOwnerCompatibility(candidate, ownerProfile) {
+  if (!ownerProfile) return 50;
+  let compat = 60;
+  const ownerControl = ownerProfile.axes?.controllo || 5;
+  const candAuth = candidate.axes?.autorità || 5;
+  const candAuto = candidate.axes?.ambizione || 5;
+
+  // High control owner + low authority candidate = good
+  if (ownerControl >= 7 && candAuth >= 6) compat += 20;
+  else if (ownerControl >= 7 && candAuth < 5) compat -= 20;
+
+  // High ambition candidate with directive owner = bad
+  if (ownerControl >= 7 && candAuto < 5) compat += 15;
+  else if (ownerControl >= 7 && candAuto > 7) compat -= 25;
+
+  // Stability alignment
+  const candStab = candidate.axes?.stabilità || 5;
+  if (candStab >= 6) compat += 10;
+
+  return Math.min(100, Math.max(0, Math.round(compat)));
+}
+
+// ═══════════════════════════════════════════
+//  SIMULATION
+// ═══════════════════════════════════════════
+document.getElementById('sim-intensity').addEventListener('input', function() {
+  document.getElementById('sim-intensity-val').textContent = this.value;
+});
+
+function runSimulation() {
+  const type = document.getElementById('sim-type').value;
+  const intensity = parseInt(document.getElementById('sim-intensity').value);
+  const people = parseInt(document.getElementById('sim-people').value) || 2;
+
+  const scenarios = {
+    new_hire: {
+      title: 'Nuovo dipendente + staff attuale',
+      calc: () => {
+        const baseRisk = STATE.candidates.length > 0 ?
+          STATE.candidates.reduce((s,c) => s + c.ira, 0) / STATE.candidates.length : 50;
+        return Math.min(100, Math.round(baseRisk * 0.6 + intensity * 3 + people * 2));
+      },
+      action: (r) => r > 65 ? 'Inserimento ad alto rischio. Periodo di affiancamento obbligatorio minimo 30 giorni.' : r > 40 ? 'Inserimento gestibile. Monitorare primi 14 giorni.' : 'Inserimento a basso rischio. Procedi.'
+    },
+    peak: {
+      title: 'Picco turistico + staff fragile',
+      calc: () => {
+        const fragile = STATE.candidates.filter(c => c.axes?.pressione < 5).length;
+        return Math.min(100, Math.round(40 + intensity * 5 + fragile * 8));
+      },
+      action: (r) => r > 65 ? 'ALLERTA: profili fragili sotto picco. Aggiungere personale di supporto o ridurre il servizio.' : r > 40 ? 'Rischio moderato. Briefing pre-picco obbligatorio.' : 'Scenario gestibile con staff attuale.'
+    },
+    salary: {
+      title: 'Aumento stipendio richiesto',
+      calc: () => {
+        const margin = STATE.salesData?.margin || 40;
+        return Math.min(100, Math.round(100 - margin + intensity * 3));
+      },
+      action: (r) => r > 65 ? `Margine insufficiente. L'aumento non è economicamente sostenibile ora.` : r > 40 ? 'Valuta aumento parziale o benefit alternativi.' : 'Margine compatibile con riconoscimento economico.'
+    },
+    overlap: {
+      title: 'Turni sovrapposti profili critici',
+      calc: () => {
+        if (STATE.candidates.length < 2) return 30;
+        let maxCoal = 0;
+        for (let i = 0; i < STATE.candidates.length; i++)
+          for (let j = i+1; j < STATE.candidates.length; j++)
+            maxCoal = Math.max(maxCoal, calculatePairCoalitionRisk(STATE.candidates[i], STATE.candidates[j]));
+        return Math.min(100, Math.round(maxCoal * 0.7 + intensity * 3));
+      },
+      action: (r) => r > 70 ? 'Turni sovrapposti a rischio elevato. Separare i profili critici.' : r > 50 ? 'Monitorare dinamiche di gruppo nelle prime settimane.' : 'Sovrapposizione turni non critica.'
+    },
+    low_season: {
+      title: 'Bassa stagione + pressione economica',
+      calc: () => {
+        const ownerStress = STATE.ownerProfile?.axes?.pressione_economica || 5;
+        return Math.min(100, Math.round(ownerStress * 7 + intensity * 4));
+      },
+      action: (r) => r > 65 ? 'Alta probabilità di conflitti con staff durante bassa stagione. Piano di comunicazione preventivo necessario.' : r > 40 ? 'Pressione moderata. Definire regole chiare pre-bassa stagione.' : 'Scenario gestibile.'
+    }
+  };
+
+  const scenario = scenarios[type];
+  const risk = scenario.calc();
+  const action = scenario.action(risk);
+  const color = risk > 65 ? 'var(--red)' : risk > 40 ? 'var(--orange)' : 'var(--green)';
+
+  document.getElementById('sim-result').style.display = 'block';
+  document.getElementById('sim-output').innerHTML = `
+    <div class="card">
+      <div class="card-title">${scenario.title}</div>
+      <div style="text-align:center; padding:16px 0;">
+        <div style="font-family:var(--font-display); font-size:56px; font-weight:800; color:${color}; line-height:1;">${risk}</div>
+        <div style="font-size:11px; color:var(--text2); margin-top:4px;">INDICE RISCHIO SCENARIO</div>
+      </div>
+      <div class="score-bar" style="margin-bottom:16px;"><div class="score-bar-fill" style="width:${risk}%; background:${color}"></div></div>
+      <div class="alert" style="background:${color}15; border-color:${color}; color:${color}dd">${action}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  FOLLOWUP
+// ═══════════════════════════════════════════
+function updateFollowupSelect() {
+  const sel = document.getElementById('followup-candidate');
+  sel.innerHTML = STATE.candidates.length === 0 ?
+    '<option value="">— Nessun candidato salvato —</option>' :
+    STATE.candidates.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+const FOLLOWUP_QUESTIONS = [
+  "Negli ultimi giorni, come valuti il suo comportamento durante i picchi di lavoro? (1-5)",
+  "Ha mostrato segni di tensione con altri colleghi? (1=no, 5=sì sempre)",
+  "Rispetta le istruzioni senza discussioni eccessive? (1=no, 5=sì sempre)",
+  "Ha avanzato richieste economiche o lamentele sui turni? (1=no, 5=sì frequenti)",
+  "Complessivamente, confermeresti l'assunzione? (1=no, 5=assolutamente sì)"
+];
+
+let followupAnswers = [];
+let followupQ = 0;
+
+function startFollowup() {
+  const candId = document.getElementById('followup-candidate').value;
+  if (!candId) return;
+  const candidate = STATE.candidates.find(c => c.id == candId);
+  if (!candidate) return;
+
+  followupAnswers = [];
+  followupQ = 0;
+
+  const modal = document.getElementById('followup-modal');
+  modal.classList.add('open');
+  renderFollowupQuestion(candidate);
+}
+
+function renderFollowupQuestion(candidate) {
+  const phase = document.getElementById('followup-phase').value;
+  const content = document.getElementById('followup-content');
+
+  if (followupQ >= FOLLOWUP_QUESTIONS.length) {
+    // Show result
+    const scores = followupAnswers.map(Number);
+    const avg = scores.reduce((s,v) => s+v, 0) / scores.length;
+    const predicted = (10 - candidate.ira/10).toFixed(1);
+    const actual = avg.toFixed(1);
+    const delta = (avg - parseFloat(predicted)).toFixed(1);
+    const deltaColor = parseFloat(delta) >= 0 ? 'var(--green)' : 'var(--red)';
+
+    content.innerHTML = `
+      <div class="modal-title">Check ${phase} giorni — ${candidate.name}</div>
+      <div class="metric-row" style="margin-bottom:16px;">
+        <div class="metric-box">
+          <div class="metric-num" style="color:var(--text2); font-size:22px;">${predicted}</div>
+          <div class="metric-label">Previsto</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-num" style="color:var(--accent); font-size:22px;">${actual}</div>
+          <div class="metric-label">Reale</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-num" style="color:${deltaColor}; font-size:22px;">${parseFloat(delta) > 0 ? '+':''  }${delta}</div>
+          <div class="metric-label">Delta</div>
+        </div>
+      </div>
+      <div class="alert ${parseFloat(delta) >= 0 ? 'alert-green' : 'alert-red'}">
+        ${parseFloat(delta) >= 0 ? '✓ Il profilo reale è migliore della previsione. Sistema calibrato correttamente.' :
+          '⚠️ Il profilo reale è peggiore della previsione. Rivedere il modello per profili simili.'}
+      </div>
+      <button class="btn btn-secondary" style="margin-top:16px;" onclick="closeFollowup()">Chiudi</button>`;
+    return;
+  }
+
+  content.innerHTML = `
+    <div style="font-size:10px; color:var(--text3); margin-bottom:8px; letter-spacing:0.1em;">DOMANDA ${followupQ+1} / ${FOLLOWUP_QUESTIONS.length}</div>
+    <div style="font-family:var(--font-display); font-size:16px; font-weight:600; margin-bottom:20px; line-height:1.4;">${FOLLOWUP_QUESTIONS[followupQ]}</div>
+    <div style="display:flex; gap:8px; margin-bottom:20px;">
+      ${[1,2,3,4,5].map(n => `<button onclick="answerFollowup(${n}, ${JSON.stringify(candidate).replace(/"/g,'&quot;')})" 
+        class="btn btn-secondary" style="flex:1; padding:16px 8px; font-size:18px; font-family:var(--font-display); font-weight:800;">${n}</button>`).join('')}
+    </div>`;
+}
+
+function answerFollowup(val, candidate) {
+  followupAnswers.push(val);
+  followupQ++;
+  renderFollowupQuestion(candidate);
+}
+
+function closeFollowup() {
+  document.getElementById('followup-modal').classList.remove('open');
+}
+
+// Close modal on backdrop click
+document.getElementById('followup-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeFollowup();
+});
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+loadState();
+updateFollowupSelect();
+
+// Update followup select when state changes
+const origSaveState = saveState;
+function saveStateAndUpdate() {
+  origSaveState();
+  updateFollowupSelect();
+}
+
+// Register as PWA
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+    self.addEventListener('fetch', e => e.respondWith(
+      caches.match(e.request).then(r => r || fetch(e.request))
+    ));
+  `;
+  const blob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+</script>
+
+</body>
+</html>
